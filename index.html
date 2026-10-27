@@ -23,8 +23,9 @@
     <!-- App Icons & Favicons for Android, iOS & Desktop -->
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png" />
-    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="shortcut icon" href="./favicon.ico" />
+    <meta property="og:image" content="./icons/icon-512.png" />
 
     <!-- PWA Service Worker Registration -->
     <script>
@@ -1088,7 +1089,7 @@
         gpsAccuracy: 12,
         isLiveGps: false,
         photoUrl: null,
-        logoUrl: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%23fbb315"/><circle cx="50" cy="27" r="13" fill="%23c5221f"/><circle cx="50" cy="27" r="10.5" fill="%23ffffff"/><text x="50" y="31" font-size="7" font-weight="900" fill="%23c5221f" text-anchor="middle">LBC</text><path d="M12 45 Q50 34 88 45 L88 64 Q50 53 12 64 Z" fill="%23ffffff"/><text x="50" y="58" font-family="sans-serif" font-weight="900" font-size="16" fill="%23006c49" text-anchor="middle">Beerlao</text><path d="M14 62 L86 62 L86 67 L14 67 Z" fill="%23006c49"/></svg>',
+        logoUrl: './icons/icon-192.png',
         logoIcon: 'sports_bar',
         ownerPin: '8888',
       };
@@ -7378,7 +7379,13 @@
         const [profile, setProfile] = useState(() => {
           try {
             const saved = localStorage.getItem('lao_pos_profile');
-            if (saved) return { ...INITIAL_STORE_PROFILE, ...JSON.parse(saved) };
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed.logoUrl && parsed.logoUrl.startsWith('data:image/svg+xml')) {
+                parsed.logoUrl = './icons/icon-192.png';
+              }
+              return { ...INITIAL_STORE_PROFILE, ...parsed };
+            }
           } catch (e) {}
           return INITIAL_STORE_PROFILE;
         });
