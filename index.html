@@ -1090,6 +1090,7 @@
         photoUrl: null,
         logoUrl: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%23fbb315"/><circle cx="50" cy="27" r="13" fill="%23c5221f"/><circle cx="50" cy="27" r="10.5" fill="%23ffffff"/><text x="50" y="31" font-size="7" font-weight="900" fill="%23c5221f" text-anchor="middle">LBC</text><path d="M12 45 Q50 34 88 45 L88 64 Q50 53 12 64 Z" fill="%23ffffff"/><text x="50" y="58" font-family="sans-serif" font-weight="900" font-size="16" fill="%23006c49" text-anchor="middle">Beerlao</text><path d="M14 62 L86 62 L86 67 L14 67 Z" fill="%23006c49"/></svg>',
         logoIcon: 'sports_bar',
+        ownerPin: '8888',
       };
 
       const INITIAL_DEMO_ORDERS = [
@@ -2519,6 +2520,7 @@
         const [ownerName, setOwnerName] = useState(profile.ownerName || profile.cashierName || '');
         const [phone, setPhone] = useState(profile.phone || '');
         const [bcelQrAccount, setBcelQrAccount] = useState(profile.bcelQrAccount || '');
+        const [ownerPin, setOwnerPin] = useState(profile.ownerPin || '8888');
         const [customQrImage, setCustomQrImage] = useState(profile.customQrImage || null);
         const [logoUrl, setLogoUrl] = useState(profile.logoUrl || null);
         const [logoIcon, setLogoIcon] = useState(profile.logoIcon || 'point_of_sale');
@@ -2568,6 +2570,7 @@
             cashierName: ownerName.trim(),
             phone: phone.trim(),
             bcelQrAccount: bcelQrAccount.trim(),
+            ownerPin: ownerPin.trim() || '8888',
             customQrImage,
             logoUrl,
             logoIcon,
@@ -2758,6 +2761,28 @@
                   </div>
                 </div>
 
+                <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-[#006c49]">
+                    <div className="flex items-center gap-1.5 font-bold text-[13px]">
+                      <span className="material-symbols-outlined text-[18px]">lock</span>
+                      <span>ລະຫັດ PIN ເຈົ້າຂອງຮ້ານ (Owner PIN)</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-200/80 text-[#006c49] px-2 py-0.5 rounded-full font-bold">ຄວາມປອດໄພ</span>
+                  </div>
+                  <p className="text-[11px] text-[#3c4a42] leading-relaxed">
+                    ລະຫັດສຳລັບປົດລັອກເພື່ອແກ້ໄຂເມນູ, ລາຄາ, ແລະ ຕັ້ງຄ່າຮ້ານ. ຄົນອື່ນທີ່ບໍ່ມີລະຫັດນີ້ຈະບໍ່ເຫັນປຸ່ມແກ້ໄຂ.
+                  </p>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={ownerPin}
+                    onChange={(e) => setOwnerPin(e.target.value)}
+                    placeholder="ກຳນົດລະຫັດ PIN ເຈົ້າຂອງຮ້ານ"
+                    className="w-full px-3.5 py-2.5 bg-white rounded-xl border border-emerald-300 font-display font-black text-center text-[18px] tracking-widest text-[#006c49] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+                  />
+                </div>
+
                 <div className="flex gap-2 pt-2">
                   <button type="button" onClick={onClose} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-[13px]">
                     ຍົກເລີກ
@@ -2773,7 +2798,138 @@
         );
       };
 
-      const Header = ({ activeTab, profile, onOpenGpsModal, onQuickSync, onEditStore, onOpenGoogleSheetModal, onOpenInstallModal, hasInstallPrompt }) => {
+      const OwnerAuthModal = ({
+        isOpen,
+        onClose,
+        onSuccessUnlock,
+        currentPin = '8888',
+        onShowToast,
+      }) => {
+        const [pinInput, setPinInput] = useState('');
+        const [showPin, setShowPin] = useState(false);
+        const [errorMsg, setErrorMsg] = useState('');
+
+        useEffect(() => {
+          if (isOpen) {
+            setPinInput('');
+            setErrorMsg('');
+            setShowPin(false);
+          }
+        }, [isOpen]);
+
+        if (!isOpen) return null;
+
+        const handleVerify = (e) => {
+          e && e.preventDefault();
+          const targetPin = (currentPin || '8888').trim();
+          if (pinInput.trim() === targetPin) {
+            vibrateSoft(40);
+            try { playFeedbackSound('success'); } catch (err) {}
+            onSuccessUnlock();
+            onShowToast('ປົດລັອກລະບົບເຈົ້າຂອງຮ້ານສຳເລັດ! 👑', 'success');
+            onClose();
+          } else {
+            vibrateSoft([50, 50, 50]);
+            setErrorMsg('ລະຫັດ PIN ບໍ່ຖືກຕ້ອງ! ກະລຸນາລອງໃໝ່');
+            setPinInput('');
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-emerald-900/10 flex flex-col gap-4 animate-slideUp">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 text-[#006c49]">
+                  <div className="w-10 h-10 rounded-xl bg-[#ecfdf5] flex items-center justify-center text-[#006c49] shadow-xs border border-[#a7f3d0]">
+                    <span className="material-symbols-outlined text-[24px]">lock</span>
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-base leading-tight">ລະຫັດ PIN ເຈົ້າຂອງຮ້ານ</h3>
+                    <p className="text-[11px] text-[#3c4a42]">Owner Security PIN</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+
+              <p className="text-[13px] text-gray-600 leading-relaxed">
+                ກະລຸນາປ້ອນລະຫັດ PIN ເພື່ອປົດລັອກສິດທິເຈົ້າຂອງຮ້ານ (ເບິ່ງ/ແກ້ໄຂເມນູ, ລາຄາ, ແລະ ຕັ້ງຄ່າຮ້ານ).
+              </p>
+
+              <form onSubmit={handleVerify} className="flex flex-col gap-3">
+                <div className="relative w-full">
+                  <input
+                    type={showPin ? "text" : "password"}
+                    inputMode="numeric"
+                    maxLength={10}
+                    autoFocus
+                    value={pinInput}
+                    onChange={(e) => {
+                      setErrorMsg('');
+                      setPinInput(e.target.value);
+                    }}
+                    placeholder="ປ້ອນລະຫັດ PIN..."
+                    className="w-full h-12 px-4 pr-11 bg-[#faf8ff] rounded-2xl border border-gray-200 text-center font-display font-black text-[22px] tracking-widest text-[#006c49] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600"
+                    title={showPin ? "ເຊື່ອງລະຫັດ" : "ສະແດງລະຫັດ"}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {showPin ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
+
+                {errorMsg && (
+                  <div className="text-[12px] text-rose-600 font-bold bg-rose-50 p-2 rounded-xl border border-rose-200 text-center">
+                    {errorMsg}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-[13px] active:scale-95 transition-all"
+                  >
+                    ຍົກເລີກ
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!pinInput.trim()}
+                    className="flex-1 py-2.5 bg-[#006c49] hover:bg-[#005236] text-white font-bold rounded-xl text-[13px] shadow-sm active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                    <span>ປົດລັອກ</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      };
+
+      const Header = ({
+        activeTab,
+        profile,
+        onOpenGpsModal,
+        onQuickSync,
+        onEditStore,
+        onOpenGoogleSheetModal,
+        onOpenInstallModal,
+        hasInstallPrompt,
+        isOwnerUnlocked,
+        onOpenOwnerAuth,
+        onLockOwner,
+      }) => {
         const getTabSubtitle = () => {
           switch (activeTab) {
             case 'pos-menu': return 'ລາຍການສັ່ງຊື້';
@@ -2789,7 +2945,11 @@
           <header className="fixed top-0 inset-x-0 z-50 bg-[#faf8ff]/95 backdrop-blur-xl shadow-[0_1px_12px_rgba(0,108,73,0.06)] border-b border-emerald-900/10" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingLeft: "env(safe-area-inset-left, 0px)", paddingRight: "env(safe-area-inset-right, 0px)" }}>
             <div className="h-14 sm:h-16 w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <button onClick={onEditStore} className="relative group shrink-0 active:scale-95 transition-transform" title="ຕັ້ງຄ່າຮ້ານ">
+                <button
+                  onClick={isOwnerUnlocked ? onEditStore : onOpenOwnerAuth}
+                  className="relative group shrink-0 active:scale-95 transition-transform"
+                  title={isOwnerUnlocked ? "ຕັ້ງຄ່າຮ້ານ" : "ກົດເພື່ອປົດລັອກລະບົບເຈົ້າຂອງຮ້ານ"}
+                >
                   {profile.logoUrl ? (
                     <img src={profile.logoUrl} alt={profile.name} className="w-10 h-10 rounded-xl object-cover shadow-sm border border-emerald-900/10 bg-white" />
                   ) : (
@@ -2797,17 +2957,27 @@
                       <span className="material-symbols-outlined text-[24px]">sports_bar</span>
                     </div>
                   )}
-                  <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full shadow-xs flex items-center justify-center text-[#006c49] border border-emerald-100">
-                    <span className="material-symbols-outlined text-[10px]">edit</span>
-                  </span>
+                  {isOwnerUnlocked && (
+                    <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full shadow-xs flex items-center justify-center text-[#006c49] border border-emerald-100">
+                      <span className="material-symbols-outlined text-[10px]">edit</span>
+                    </span>
+                  )}
                 </button>
                 <div className="flex flex-col min-w-0">
-                  <button onClick={onEditStore} className="flex items-center gap-1 group text-left max-w-full">
-                    <span className="font-display font-bold text-[16px] text-[#006c49] truncate leading-tight tracking-tight group-hover:underline">
-                      {profile.name}
-                    </span>
-                    <span className="material-symbols-outlined text-[13px] text-[#006c49]/70 group-hover:text-[#006c49] shrink-0">edit</span>
-                  </button>
+                  {isOwnerUnlocked ? (
+                    <button onClick={onEditStore} className="flex items-center gap-1 group text-left max-w-full">
+                      <span className="font-display font-bold text-[16px] text-[#006c49] truncate leading-tight tracking-tight group-hover:underline">
+                        {profile.name}
+                      </span>
+                      <span className="material-symbols-outlined text-[13px] text-[#006c49]/70 group-hover:text-[#006c49] shrink-0">edit</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1 text-left max-w-full">
+                      <span className="font-display font-bold text-[16px] text-[#006c49] truncate leading-tight tracking-tight">
+                        {profile.name}
+                      </span>
+                    </div>
+                  )}
                   <button onClick={onOpenGpsModal} className="flex items-center gap-1 mt-0.5 text-left group transition-opacity active:opacity-75">
                     <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse shrink-0"></span>
                     <span className="text-[11px] text-[#3c4a42] flex items-center gap-0.5 truncate font-medium">
@@ -2830,14 +3000,38 @@
                   <span className="material-symbols-outlined text-[17px] text-amber-900">install_mobile</span>
                   <span className="hidden sm:inline">ຕິດຕັ້ງແອັບ</span>
                 </button>
-                <button
-                  onClick={onOpenGoogleSheetModal}
-                  className="h-9 px-2.5 rounded-xl flex items-center gap-1 text-[11px] font-bold bg-[#ecfdf5] hover:bg-emerald-100 text-[#0f9d58] border border-[#a7f3d0] transition-colors active:scale-95"
-                  title="Google Sheet"
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#0f9d58] animate-pulse"></span>
-                  <span>Sheet ID</span>
-                </button>
+                {isOwnerUnlocked && (
+                  <button
+                    onClick={onOpenGoogleSheetModal}
+                    className="h-9 px-2.5 rounded-xl flex items-center gap-1 text-[11px] font-bold bg-[#ecfdf5] hover:bg-emerald-100 text-[#0f9d58] border border-[#a7f3d0] transition-colors active:scale-95 animate-fadeIn"
+                    title="Google Sheet Settings"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-[#0f9d58] animate-pulse"></span>
+                    <span>Sheet ID</span>
+                  </button>
+                )}
+                {isOwnerUnlocked ? (
+                  <button
+                    type="button"
+                    onClick={onLockOwner}
+                    className="h-9 px-2.5 rounded-xl flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100/90 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 border border-emerald-300 transition-all active:scale-95 shadow-2xs group"
+                    title="ກົດເພື່ອລັອກ ແລະ ເຊື່ອງປຸ່ມແກ້ໄຂ (Lock Owner Mode)"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-[#006c49] group-hover:text-rose-700">lock_open</span>
+                    <span className="group-hover:hidden hidden sm:inline">ເຈົ້າຂອງຮ້ານ</span>
+                    <span className="hidden group-hover:inline">ລັອກແອັບ</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onOpenOwnerAuth}
+                    className="h-9 px-2.5 rounded-xl flex items-center gap-1.5 text-[11px] font-bold text-gray-700 bg-white hover:bg-emerald-50 hover:text-[#006c49] border border-gray-200 transition-all active:scale-95 shadow-2xs"
+                    title="ປົດລັອກລະບົບເຈົ້າຂອງຮ້ານ (Owner Mode PIN)"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-gray-500">lock</span>
+                    <span className="hidden sm:inline">ເຈົ້າຂອງຮ້ານ</span>
+                  </button>
+                )}
                 <button
                   onClick={onQuickSync}
                   className="w-9 h-9 rounded-xl flex items-center justify-center text-[#3c4a42] hover:text-[#006c49] hover:bg-[#ecfdf5] transition-colors active:scale-95 border border-gray-100"
@@ -2851,14 +3045,16 @@
         );
       };
 
-      const BottomNav = ({ activeTab, onChangeTab, cartTotalCount }) => {
-        const tabs = [
+      const BottomNav = ({ activeTab, onChangeTab, cartTotalCount, isOwnerUnlocked }) => {
+        const allTabs = [
           { id: 'pos-menu', label: 'ເມນູສັ່ງຊື້', icon: 'shopping_bag' },
           { id: 'cart-and-whatsapp', label: 'ກະຕ່າ & WhatsApp', icon: 'shopping_cart', badge: cartTotalCount },
           { id: 'sales-dashboard', label: 'ສະຫຼຸບຍອດ', icon: 'bar_chart' },
           { id: 'order-history', label: 'ປະຫວັດບິນ', icon: 'receipt_long' },
-          { id: 'catalog-settings', label: 'ຈັດການເມນູ', icon: 'tune' },
+          { id: 'catalog-settings', label: 'ຈັດການເມນູ', icon: 'tune', requiresOwner: true },
         ];
+
+        const tabs = isOwnerUnlocked ? allTabs : allTabs.filter((t) => !t.requiresOwner);
 
         return (
           <nav className="fixed bottom-0 inset-x-0 z-40 pointer-events-none px-2 sm:px-3" style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))", paddingLeft: "calc(0.5rem + env(safe-area-inset-left, 0px))", paddingRight: "calc(0.5rem + env(safe-area-inset-right, 0px))" }}>
@@ -7182,10 +7378,19 @@
         const [profile, setProfile] = useState(() => {
           try {
             const saved = localStorage.getItem('lao_pos_profile');
-            if (saved) return JSON.parse(saved);
+            if (saved) return { ...INITIAL_STORE_PROFILE, ...JSON.parse(saved) };
           } catch (e) {}
           return INITIAL_STORE_PROFILE;
         });
+
+        const [isOwnerUnlocked, setIsOwnerUnlocked] = useState(() => {
+          try {
+            return sessionStorage.getItem('lao_pos_owner_unlocked') === 'true';
+          } catch (e) {
+            return false;
+          }
+        });
+        const [isOwnerAuthModalOpen, setIsOwnerAuthModalOpen] = useState(false);
 
         const [cashiers, setCashiers] = useState(() => {
           try {
@@ -7202,6 +7407,25 @@
         const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
         const [isGoogleSheetModalOpen, setIsGoogleSheetModalOpen] = useState(false);
         const [permState, setPermState] = useState('prompt');
+
+        const handleUnlockOwner = () => {
+          setIsOwnerUnlocked(true);
+          try {
+            sessionStorage.setItem('lao_pos_owner_unlocked', 'true');
+          } catch (e) {}
+        };
+
+        const handleLockOwner = () => {
+          vibrateSoft(30);
+          setIsOwnerUnlocked(false);
+          try {
+            sessionStorage.removeItem('lao_pos_owner_unlocked');
+          } catch (e) {}
+          if (activeTab === 'catalog-settings') {
+            setActiveTab('pos-menu');
+          }
+          showToast('ລັອກລະບົບເຈົ້າຂອງຮ້ານ ແລະ ເຊື່ອງປຸ່ມແກ້ໄຂຮຽບຮ້ອຍ 🔒', 'info');
+        };
 
         useEffect(() => {
           checkGeoPermission().then((st) => setPermState(st));
@@ -7484,12 +7708,37 @@
               onShowToast={showToast}
             />
 
+            <OwnerAuthModal
+              isOpen={isOwnerAuthModalOpen}
+              onClose={() => setIsOwnerAuthModalOpen(false)}
+              onSuccessUnlock={handleUnlockOwner}
+              currentPin={profile.ownerPin || '8888'}
+              onShowToast={showToast}
+            />
+
             <Header
               activeTab={activeTab}
               profile={profile}
-              onEditStore={() => { vibrateSoft(); setIsStoreSettingsOpen(true); }}
+              isOwnerUnlocked={isOwnerUnlocked}
+              onOpenOwnerAuth={() => { vibrateSoft(15); setIsOwnerAuthModalOpen(true); }}
+              onLockOwner={handleLockOwner}
+              onEditStore={() => {
+                if (!isOwnerUnlocked) {
+                  setIsOwnerAuthModalOpen(true);
+                  return;
+                }
+                vibrateSoft();
+                setIsStoreSettingsOpen(true);
+              }}
               onOpenGpsModal={() => setIsGpsModalOpen(true)}
-              onOpenGoogleSheetModal={() => { vibrateSoft(); setIsGoogleSheetModalOpen(true); }}
+              onOpenGoogleSheetModal={() => {
+                if (!isOwnerUnlocked) {
+                  setIsOwnerAuthModalOpen(true);
+                  return;
+                }
+                vibrateSoft();
+                setIsGoogleSheetModalOpen(true);
+              }}
               onOpenInstallModal={() => { vibrateSoft(); setIsInstallModalOpen(true); }}
               hasInstallPrompt={!!deferredPrompt && !isStandalone}
               onQuickSync={handleQuickSyncAll}
@@ -7536,22 +7785,53 @@
                 />
               )}
               {activeTab === 'catalog-settings' && (
-                <CatalogTab
-                  products={products}
-                  profile={profile}
-                  onOpenStoreSettings={() => { vibrateSoft(); setIsStoreSettingsOpen(true); }}
-                  onOpenGoogleSheetModal={() => { vibrateSoft(); setIsGoogleSheetModalOpen(true); }}
-                  onAddProduct={handleAddProduct}
-                  onUpdateProduct={handleUpdateProduct}
-                  onDeleteProduct={handleDeleteProduct}
-                  onResetProducts={handleResetProducts}
-                  onShowToast={showToast}
-                  onReloadMenu={handleReloadMenuFromSheetAction}
-                />
+                isOwnerUnlocked ? (
+                  <CatalogTab
+                    products={products}
+                    profile={profile}
+                    onOpenStoreSettings={() => { vibrateSoft(); setIsStoreSettingsOpen(true); }}
+                    onOpenGoogleSheetModal={() => { vibrateSoft(); setIsGoogleSheetModalOpen(true); }}
+                    onAddProduct={handleAddProduct}
+                    onUpdateProduct={handleUpdateProduct}
+                    onDeleteProduct={handleDeleteProduct}
+                    onResetProducts={handleResetProducts}
+                    onShowToast={showToast}
+                    onReloadMenu={handleReloadMenuFromSheetAction}
+                  />
+                ) : (
+                  <div className="p-8 text-center max-w-md mx-auto my-12 bg-white rounded-3xl shadow-sm border border-emerald-900/10 flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-[#ecfdf5] text-[#006c49] flex items-center justify-center border border-[#a7f3d0]">
+                      <span className="material-symbols-outlined text-[32px]">lock</span>
+                    </div>
+                    <h3 className="font-display font-bold text-lg text-[#006c49]">ສະເພາະເຈົ້າຂອງຮ້ານ</h3>
+                    <p className="text-[13px] text-gray-600 leading-relaxed max-w-xs">
+                      ເມນູນີ້ສະຫງວນໄວ້ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນ. ກະລຸນາປ້ອນລະຫັດ PIN ເພື່ອເຂົ້າເຖິງການຈັດການເມນູ ແລະ ແກ້ໄຂຂໍ້ມູນ.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsOwnerAuthModalOpen(true)}
+                      className="mt-2 px-6 py-2.5 bg-[#006c49] hover:bg-[#005236] text-white font-bold rounded-xl text-sm shadow-sm active:scale-95 transition-all flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                      <span>ປົດລັອກລະບົບເຈົ້າຂອງຮ້ານ (PIN)</span>
+                    </button>
+                  </div>
+                )
               )}
             </main>
 
-            <BottomNav activeTab={activeTab} onChangeTab={setActiveTab} cartTotalCount={cartTotalCount} />
+            <BottomNav
+              activeTab={activeTab}
+              onChangeTab={(tabId) => {
+                if (tabId === 'catalog-settings' && !isOwnerUnlocked) {
+                  setIsOwnerAuthModalOpen(true);
+                  return;
+                }
+                setActiveTab(tabId);
+              }}
+              cartTotalCount={cartTotalCount}
+              isOwnerUnlocked={isOwnerUnlocked}
+            />
           </div>
         );
       }
