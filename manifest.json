@@ -5,7 +5,7 @@
   "description": "Beerlao POS Order Management System",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#FFC400",
   "theme_color": "#FFC400",
@@ -28,5 +28,9 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone"
   ]
 }

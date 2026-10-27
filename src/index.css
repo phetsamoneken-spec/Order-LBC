@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/* PWA fullscreen viewport baseline */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+html,
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+body {
+  padding: 0;
+}
+#root {
+  min-height: 100dvh;
+}

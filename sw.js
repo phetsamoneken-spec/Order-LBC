@@ -1,5 +1,5 @@
 // Beerlao POS Service Worker
-const CACHE_NAME = 'beerlao-pos-v3-icons';
+const CACHE_NAME = 'beerlao-pos-v3-fullscreen';
 
 // Core Application Shell assets to cache for offline availability
 const APP_SHELL_ASSETS = [
