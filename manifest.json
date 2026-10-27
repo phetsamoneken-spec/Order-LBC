@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Beerlao POS",
-  "short_name": "Beerlao POS",
+  "name": "LBC Order",
+  "short_name": "LBC Order",
   "description": "Beerlao POS Order Management System",
   "start_url": "./",
   "scope": "./",
