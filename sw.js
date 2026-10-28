@@ -1,14 +1,19 @@
-// Beerlao POS Service Worker
-const CACHE_NAME = 'LBC-Order-v3-fullscreen';
+// LBC Order / Beerlao POS Service Worker
+const CACHE_NAME = 'LBC-Order-v5-golden-solid-icons';
 
 // Core Application Shell assets to cache for offline availability
 const APP_SHELL_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './favicon.ico',
+  './apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/icon-192-maskable.png',
+  './icons/icon-512-maskable.png',
   './icons/maskable-512.png',
+  './icons/apple-touch-icon.png',
   './fonts/material-symbols-outlined.ttf'
 ];
 
@@ -28,7 +33,7 @@ const EXCLUDED_HOSTS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Pre-caching App Shell assets');
+      console.log('[SW] Pre-caching App Shell assets with solid golden icons');
       return cache.addAll(APP_SHELL_ASSETS);
     }).then(() => self.skipWaiting())
   );
@@ -40,7 +45,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log('[SW] Removing old cache:', key);
+            console.log('[SW] Purging stale cache:', key);
             return caches.delete(key);
           }
         })
