@@ -1,5 +1,5 @@
 // LBC Order / Beerlao POS Service Worker
-const CACHE_NAME = 'Beerlao-POS-v7-github-icons';
+const CACHE_NAME = 'LBC-Order-v8-reverted';
 
 // Core Application Shell assets to cache for offline availability
 const APP_SHELL_ASSETS = [
@@ -7,12 +7,9 @@ const APP_SHELL_ASSETS = [
   './index.html',
   './manifest.json',
   './favicon.ico',
-  './favicon.png',
   './apple-touch-icon.png',
-  './icons/favicon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/icon-1024.png',
   './icons/icon-192-maskable.png',
   './icons/icon-512-maskable.png',
   './icons/maskable-512.png',
