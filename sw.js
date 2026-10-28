@@ -1,5 +1,5 @@
 // LBC Order / Beerlao POS Service Worker
-const CACHE_NAME = 'LBC-Order-v8-reverted';
+const CACHE_NAME = 'LBC-Order-v9-no-yellow-border';
 
 // Core Application Shell assets to cache for offline availability
 const APP_SHELL_ASSETS = [

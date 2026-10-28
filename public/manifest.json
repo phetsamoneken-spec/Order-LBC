@@ -5,10 +5,10 @@
   "description": "LBC Order Beerlao POS Order Management System",
   "start_url": "./",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F59E0B",
-  "theme_color": "#F59E0B",
+  "background_color": "#faf8ff",
+  "theme_color": "#faf8ff",
   "icons": [
     {
       "src": "./icons/icon-192.png",
@@ -42,7 +42,8 @@
     }
   ],
   "display_override": [
-    "fullscreen",
-    "standalone"
+    "window-controls-overlay",
+    "standalone",
+    "fullscreen"
   ]
 }
