@@ -13,14 +13,15 @@
 
     <!-- Progressive Web App (PWA) Setup -->
     <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#F59E0B" />
+    <meta name="theme-color" content="#F8C928" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="LBC Order" />
-    <meta name="application-name" content="LBC Order" />
+    <meta name="apple-mobile-web-app-title" content="Beerlao POS" />
+    <meta name="application-name" content="Beerlao POS" />
 
     <!-- App Icons & Favicons for Android, iOS & Desktop -->
+    <link rel="icon" type="image/png" href="./icons/favicon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -3059,23 +3060,33 @@
         const tabs = isOwnerUnlocked ? allTabs : allTabs.filter((t) => !t.requiresOwner);
 
         return (
-          <nav className="fixed bottom-0 inset-x-0 z-40 pointer-events-none px-2 sm:px-3" style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))", paddingLeft: "calc(0.5rem + env(safe-area-inset-left, 0px))", paddingRight: "calc(0.5rem + env(safe-area-inset-right, 0px))" }}>
-            <div className="pointer-events-auto mx-auto w-full max-w-[1600px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_24px_-4px_rgba(15,23,42,0.12),0_2px_8px_-2px_rgba(16,185,129,0.08)] border border-white/80 flex items-center justify-between p-1 sm:p-1.5">
+          <nav
+            className="fixed bottom-0 inset-x-0 z-40 pointer-events-none px-2 sm:px-3"
+            style={{
+              paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))",
+              paddingLeft: "calc(0.5rem + env(safe-area-inset-left, 0px))",
+              paddingRight: "calc(0.5rem + env(safe-area-inset-right, 0px))"
+            }}
+          >
+            <div className="pointer-events-auto mx-auto w-full max-w-[1600px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_24px_-4px_rgba(15,23,42,0.12),0_2px_8px_-2px_rgba(16,185,129,0.08)] border border-white/80 flex items-center justify-between p-1 sm:p-1.5 gap-1 sm:gap-1.5">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => {
                       vibrateSoft(15);
                       onChangeTab(tab.id);
                     }}
-                    className={`flex flex-col items-center justify-center flex-1 py-1 px-0.5 rounded-xl transition-all duration-200 min-h-[52px] ${
-                      isActive ? 'text-[#006c49] font-bold bg-[#ecfdf5] scale-105 shadow-xs' : 'text-[#3c4a42] hover:text-[#006c49] font-medium active:scale-95'
+                    className={`relative flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-colors duration-150 min-h-[52px] select-none ${
+                      isActive
+                        ? 'text-[#006c49] font-bold bg-[#ecfdf5] shadow-xs ring-1 ring-[#006c49]/15'
+                        : 'text-[#475569] hover:text-[#006c49] hover:bg-slate-50 font-medium active:scale-95'
                     }`}
                   >
                     <div className="relative flex items-center justify-center">
-                      <span className={`material-symbols-outlined text-[22px] transition-transform ${isActive ? 'scale-110 text-[#006c49]' : ''}`}>
+                      <span className={`material-symbols-outlined text-[22px] transition-transform duration-150 ${isActive ? 'scale-110 text-[#006c49]' : ''}`}>
                         {tab.icon}
                       </span>
                       {typeof tab.badge === 'number' && tab.badge > 0 && (
@@ -3084,7 +3095,9 @@
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] mt-0.5 text-center leading-tight truncate w-full">{tab.label}</span>
+                    <span className={`text-[10.5px] sm:text-[11px] mt-0.5 text-center leading-tight truncate w-full px-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>
+                      {tab.label}
+                    </span>
                   </button>
                 );
               })}
@@ -5720,6 +5733,8 @@
         cashiers = INITIAL_CASHIERS,
         onUpdateCashiers,
         onShowToast,
+        isOwnerUnlocked = false,
+        onOpenOwnerAuth,
       }) => {
         const [showClearConfirm, setShowClearConfirm] = useState(false);
         const [orderToDelete, setOrderToDelete] = useState(null);
@@ -5746,6 +5761,12 @@
         };
 
         const handleToggle = (orderId, currentStatus) => {
+          if (!isOwnerUnlocked && currentStatus === 'delivered') {
+            vibrateSoft(15);
+            onShowToast('ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນທີ່ສາມາດແກ້ໄຂສະຖານະບິນທີ່ສົ່ງແລ້ວ', 'warning');
+            onOpenOwnerAuth && onOpenOwnerAuth();
+            return;
+          }
           vibrateSoft(35);
           const nextStatus = currentStatus === 'delivered' ? 'pending' : 'delivered';
           onToggleOrderStatus(orderId, { status: nextStatus });
@@ -6076,13 +6097,19 @@
                 <button
                   type="button"
                   onClick={() => {
+                    if (!isOwnerUnlocked) {
+                      vibrateSoft(15);
+                      onShowToast('ກະລຸນາປົດລັອກລະຫັດ PIN ເຈົ້າຂອງຮ້ານກ່ອນຈຶ່ງຈະຈັດການລາຍຊື່ຄົນເກັບເງິນໄດ້', 'warning');
+                      onOpenOwnerAuth && onOpenOwnerAuth();
+                      return;
+                    }
                     vibrateSoft(15);
                     setIsCashierModalOpen(true);
                   }}
                   className="px-3 py-2 bg-white hover:bg-emerald-50 text-[#006c49] border border-emerald-200 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-2xs active:scale-95 transition-all"
-                  title="ຈັດການລາຍຊື່ຄົນເກັບເງິນ (ເພີ່ມ, ແກ້ໄຂ, ລຶບ, ໃສ່ຮູບ)"
+                  title={isOwnerUnlocked ? "ຈັດການລາຍຊື່ຄົນເກັບເງິນ (ເພີ່ມ, ແກ້ໄຂ, ລຶບ, ໃສ່ຮູບ)" : "ຈັດການຄົນເກັບເງິນ (ສະຫງວນສິດເຈົ້າຂອງຮ້ານ)"}
                 >
-                  <span className="material-symbols-outlined text-[16px]">group</span>
+                  <span className="material-symbols-outlined text-[16px]">{isOwnerUnlocked ? 'group' : 'lock'}</span>
                   <span>ຄົນເກັບເງິນ ({cashiers.length})</span>
                 </button>
 
@@ -6110,6 +6137,52 @@
                 </a>
               </div>
             </div>
+
+            {/* Owner Security Status Banner */}
+            {!isOwnerUnlocked ? (
+              <div className="flex items-center justify-between gap-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl p-2.5 sm:p-3 mb-3.5 shadow-2xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100/90 flex items-center justify-center text-amber-800 shrink-0 border border-amber-300/60">
+                    <span className="material-symbols-outlined text-[18px]">lock</span>
+                  </div>
+                  <div className="min-w-0">
+                    <span className="font-bold text-amber-950 text-[12px] block leading-tight">
+                      ໂໝດທົ່ວໄປ (ລັອກການແກ້ໄຂ / ລຶບບິນ)
+                    </span>
+                    <span className="text-[11px] text-amber-700 block truncate">
+                      ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນທີ່ສາມາດແກ້ໄຂ ຫຼື ລຶບປະຫວັດບິນໄດ້
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenOwnerAuth}
+                  className="px-3 py-1.5 bg-white hover:bg-amber-100/60 text-[#006c49] font-bold text-xs rounded-xl border border-amber-300 shadow-2xs shrink-0 flex items-center gap-1 active:scale-95 transition-all"
+                >
+                  <span className="material-symbols-outlined text-[15px]">key</span>
+                  <span>ປົດລັອກ PIN</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-2.5 bg-[#ecfdf5] border border-[#a7f3d0] rounded-2xl p-2.5 sm:p-3 mb-3.5 shadow-2xs">
+                <div className="flex items-center gap-2.5 min-w-0 text-[#006c49]">
+                  <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-[#006c49] shrink-0 border border-emerald-200 shadow-2xs">
+                    <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                  </div>
+                  <div className="min-w-0">
+                    <span className="font-bold text-[#006c49] text-[12px] block leading-tight">
+                      ໂໝດເຈົ້າຂອງຮ້ານ (Owner Mode) 👑
+                    </span>
+                    <span className="text-[11px] text-[#3c4a42] block truncate">
+                      ທ່ານສາມາດແກ້ໄຂສະຖານະ, ແກ້ໄຂຄົນເກັບເງິນ, ແລະ ລຶບບິນໄດ້ແລ້ວ
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold text-[#006c49] bg-white px-2.5 py-1 rounded-xl border border-emerald-200 shrink-0">
+                  ປົດລັອກແລ້ວ
+                </span>
+              </div>
+            )}
 
             {orders.length === 0 ? (
               <div className="bg-white rounded-3xl p-8 text-center border border-gray-100 shadow-sm flex flex-col items-center gap-3 my-4">
@@ -6182,23 +6255,41 @@
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => { vibrateSoft(15); setConfirmingOrder(order); }}
-                                className="bg-white hover:bg-emerald-100 text-[#006c49] font-black text-[11px] px-2.5 py-1.5 rounded-xl border border-emerald-300 shadow-2xs active:scale-95 transition-all flex items-center gap-1"
-                                title="ແກ້ໄຂຄົນເກັບເງິນ / ຫຼັກຖານ"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">edit</span>
-                                <span>ແກ້ໄຂ</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleToggle(order.id, order.status)}
-                                className="bg-white hover:bg-amber-50 text-amber-700 font-bold text-[11px] p-1.5 rounded-xl border border-amber-200 shadow-2xs active:scale-95 transition-all flex items-center justify-center"
-                                title="ປ່ຽນກັບເປັນຍັງບໍ່ທັນສົ່ງ"
-                              >
-                                <span className="material-symbols-outlined text-[15px]">undo</span>
-                              </button>
+                              {isOwnerUnlocked ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => { vibrateSoft(15); setConfirmingOrder(order); }}
+                                    className="bg-white hover:bg-emerald-100 text-[#006c49] font-black text-[11px] px-2.5 py-1.5 rounded-xl border border-emerald-300 shadow-2xs active:scale-95 transition-all flex items-center gap-1"
+                                    title="ແກ້ໄຂຄົນເກັບເງິນ / ຫຼັກຖານ (ສິດເຈົ້າຂອງຮ້ານ)"
+                                  >
+                                    <span className="material-symbols-outlined text-[14px]">edit</span>
+                                    <span>ແກ້ໄຂ</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggle(order.id, order.status)}
+                                    className="bg-white hover:bg-amber-50 text-amber-700 font-bold text-[11px] p-1.5 rounded-xl border border-amber-200 shadow-2xs active:scale-95 transition-all flex items-center justify-center"
+                                    title="ປ່ຽນກັບເປັນຍັງບໍ່ທັນສົ່ງ (ສິດເຈົ້າຂອງຮ້ານ)"
+                                  >
+                                    <span className="material-symbols-outlined text-[15px]">undo</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    vibrateSoft(15);
+                                    onShowToast('ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນ: ກະລຸນາປົດລັອກ PIN ເພື່ອແກ້ໄຂບິນ', 'warning');
+                                    onOpenOwnerAuth && onOpenOwnerAuth();
+                                  }}
+                                  className="bg-white/80 hover:bg-amber-50 text-gray-400 hover:text-amber-800 font-bold text-[11px] px-2 py-1.5 rounded-xl border border-gray-200 shadow-2xs active:scale-95 transition-all flex items-center gap-1"
+                                  title="ແກ້ໄຂບິນ (ສະຫງວນສິດເຈົ້າຂອງຮ້ານ)"
+                                >
+                                  <span className="material-symbols-outlined text-[13px]">lock</span>
+                                  <span>ແກ້ໄຂ</span>
+                                </button>
+                              )}
                             </div>
                           </div>
 
@@ -6399,31 +6490,48 @@
                           </a>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            vibrateSoft(15);
-                            setOrderToDelete(order.id);
-                          }}
-                          className="w-9 h-9 rounded-xl hover:bg-rose-50 text-gray-400 hover:text-rose-600 flex items-center justify-center transition-colors shrink-0"
-                          title="ລຶບບິນນີ້"
-                        >
-                          <span className="material-symbols-outlined text-[17px]">delete</span>
-                        </button>
+                        {isOwnerUnlocked ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              vibrateSoft(15);
+                              setOrderToDelete(order.id);
+                            }}
+                            className="w-9 h-9 rounded-xl hover:bg-rose-50 text-gray-400 hover:text-rose-600 flex items-center justify-center transition-colors shrink-0"
+                            title="ລຶບບິນນີ້ (ສິດເຈົ້າຂອງຮ້ານ)"
+                          >
+                            <span className="material-symbols-outlined text-[17px]">delete</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              vibrateSoft(15);
+                              onShowToast('ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນ: ກະລຸນາປົດລັອກ PIN ເພື່ອລຶບບິນ', 'warning');
+                              onOpenOwnerAuth && onOpenOwnerAuth();
+                            }}
+                            className="w-9 h-9 rounded-xl text-gray-300 hover:text-amber-700 hover:bg-amber-50 flex items-center justify-center transition-colors shrink-0"
+                            title="ລຶບບິນ (ສະຫງວນສິດເຈົ້າຂອງຮ້ານ)"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">lock</span>
+                          </button>
+                        )}
                       </div>
                     </article>
                   );
                 })}
 
-                <div className="pt-3 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowClearConfirm(true)}
-                    className="text-[12px] text-gray-400 hover:text-rose-600 transition-colors font-semibold underline active:opacity-75"
-                  >
-                    ລຶບປະຫວັດບິນທັງໝົດ (Clear All Orders)
-                  </button>
-                </div>
+                {isOwnerUnlocked && (
+                  <div className="pt-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowClearConfirm(true)}
+                      className="text-[12px] text-gray-400 hover:text-rose-600 transition-colors font-semibold underline active:opacity-75"
+                    >
+                      ລຶບປະຫວັດບິນທັງໝົດ (Clear All Orders)
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -7783,13 +7891,32 @@
               {activeTab === 'order-history' && (
                 <OrdersTab
                   orders={orders}
-                  onDeleteOrder={(id) => setOrders((prev) => prev.filter((o) => o.id !== id))}
-                  onClearAllOrders={() => setOrders([])}
+                  onDeleteOrder={(id) => {
+                    if (!isOwnerUnlocked) {
+                      showToast('ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນທີ່ສາມາດລຶບບິນໄດ້', 'error');
+                      setIsOwnerAuthModalOpen(true);
+                      return;
+                    }
+                    setOrders((prev) => prev.filter((o) => o.id !== id));
+                  }}
+                  onClearAllOrders={() => {
+                    if (!isOwnerUnlocked) {
+                      showToast('ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນທີ່ສາມາດລຶບປະຫວັດບິນທັງໝົດໄດ້', 'error');
+                      setIsOwnerAuthModalOpen(true);
+                      return;
+                    }
+                    setOrders([]);
+                  }}
                   onToggleOrderStatus={handleToggleOrderStatus}
                   profile={profile}
                   cashiers={cashiers}
                   onUpdateCashiers={setCashiers}
                   onShowToast={showToast}
+                  isOwnerUnlocked={isOwnerUnlocked}
+                  onOpenOwnerAuth={() => {
+                    vibrateSoft(15);
+                    setIsOwnerAuthModalOpen(true);
+                  }}
                 />
               )}
               {activeTab === 'catalog-settings' && (
